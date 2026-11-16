@@ -12,15 +12,18 @@ con Terraform.
 | 3 | Backup y recuperación en una segunda región | No | No | No |
 | 4 | [Red de 2 capas con NSG y Bastion](04-vnet-2tier-bastion/README.md) | Sí | Sí | No |
 | 5 | Clúster AKS de producción | No | No | No |
-| 6 | Identidad y acceso con Entra ID y PIM | No | No | No |
+| 6 | [Identidad y acceso con Entra ID y PIM](06-entra-id-pim/README.md) | Sí | Sí | Sí, sin PIM |
 | 7 | Red híbrida hub-and-spoke | No | No | No |
 | 8 | Monitoreo y control de costos | No | No | No |
 | 9 | Landing zone de Azure | No | No | No |
 | 10 | [Pipeline de CI para Terraform](10-terraform-cicd/README.md) | Sí | — | No aplica |
 
-Ningún proyecto se ha desplegado todavía: hace falta una suscripción de Azure.
+El proyecto 6 está desplegado en un directorio real de Entra ID, que no
+necesita suscripción; su parte de PIM no, porque exige licencia P2. El resto
+no se ha desplegado: hace falta una suscripción de Azure.
+
 "Pruebas simuladas" significa que el diseño se comprueba con `terraform test`
-y un proveedor de Azure simulado, sin crear recursos.
+y un proveedor simulado, sin crear recursos.
 
 ## Requisitos
 
