@@ -13,7 +13,7 @@ porque GitHub solo ejecuta los workflows que están en esa carpeta de la raíz.
 | Formato | `terraform fmt -check` en todo el repositorio | Bloquea |
 | Buscar proyectos | Lista las carpetas que tienen un `providers.tf` | Bloquea |
 | Validar y probar | Por cada proyecto: `init`, `validate` y `terraform test` | Bloquea |
-| Análisis de seguridad | `checkov` sobre todo el código | Solo informa |
+| Análisis de seguridad | `checkov` sobre todo el código | Bloquea |
 
 Se ejecuta en cada push a `main`, en cada pull request y a mano desde la
 pestaña Actions.
@@ -52,8 +52,13 @@ de despliegue necesita una suscripción de Azure:
 3. Un trabajo `plan` en cada pull request y un `apply` con aprobación manual
    al fusionar en `main`.
 
-## Pendiente
+## Avisos de seguridad aceptados
 
-- El análisis de seguridad está en modo informativo (`--soft-fail`). Tras la
-  primera ejecución hay que revisar los hallazgos y resolverlos o justificarlos
-  antes de hacerlo bloqueante.
+El análisis bloquea el pipeline ante cualquier hallazgo. Los que se aceptan
+por diseño llevan un comentario `checkov:skip` con el motivo, junto al recurso:
+
+| Aviso | Recurso | Motivo |
+|---|---|---|
+| `CKV_AZURE_97` | Conjunto de escalado del proyecto 1 | El cifrado en el host exige registrar una característica en la suscripción |
+| `CKV_AZURE_119` | Interfaz de red de la VM web del proyecto 4 | La VM web es el punto de entrada público del laboratorio |
+| `CKV_AZURE_160` | NSG de la capa web del proyecto 4 | El laboratorio publica HTTP sin certificado |

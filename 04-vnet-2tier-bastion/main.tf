@@ -69,6 +69,8 @@ resource "azurerm_network_security_group" "web" {
   resource_group_name = azurerm_resource_group.this.name
   tags                = local.tags
 
+  # checkov:skip=CKV_AZURE_160: La capa web es pública por diseño y el laboratorio no usa certificado TLS; en producción se publicaría solo por HTTPS.
+
   security_rule {
     name                       = "allow-http-from-internet"
     priority                   = 100
@@ -172,6 +174,117 @@ resource "azurerm_subnet_network_security_group_association" "data" {
   network_security_group_id = azurerm_network_security_group.data.id
 }
 
+# NSG de la subred de Bastion. Azure exige exactamente este conjunto de reglas
+# y rechaza la asociación si falta alguna:
+# https://learn.microsoft.com/azure/bastion/bastion-nsg
+resource "azurerm_network_security_group" "bastion" {
+  name                = "nsg-${var.prefix}-bastion"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  tags                = local.tags
+
+  security_rule {
+    name                       = "AllowHttpsInbound"
+    priority                   = 120
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowGatewayManagerInbound"
+    priority                   = 130
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "GatewayManager"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowAzureLoadBalancerInbound"
+    priority                   = 140
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "AzureLoadBalancer"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowBastionHostCommunication"
+    priority                   = 150
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_ranges    = ["8080", "5701"]
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "VirtualNetwork"
+  }
+
+  security_rule {
+    name                       = "AllowSshRdpOutbound"
+    priority                   = 100
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_ranges    = ["22", "3389"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "VirtualNetwork"
+  }
+
+  security_rule {
+    name                       = "AllowAzureCloudOutbound"
+    priority                   = 110
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "AzureCloud"
+  }
+
+  security_rule {
+    name                       = "AllowBastionCommunication"
+    priority                   = 120
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_ranges    = ["8080", "5701"]
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "VirtualNetwork"
+  }
+
+  security_rule {
+    name                       = "AllowHttpOutbound"
+    priority                   = 130
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "Internet"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "bastion" {
+  subnet_id                 = azurerm_subnet.bastion.id
+  network_security_group_id = azurerm_network_security_group.bastion.id
+}
+
 # ---------------------------------------------------------------------------
 # Azure Bastion: única vía de administración, sin abrir SSH a Internet
 # ---------------------------------------------------------------------------
@@ -198,4 +311,6 @@ resource "azurerm_bastion_host" "this" {
     subnet_id            = azurerm_subnet.bastion.id
     public_ip_address_id = azurerm_public_ip.bastion.id
   }
+
+  depends_on = [azurerm_subnet_network_security_group_association.bastion]
 }

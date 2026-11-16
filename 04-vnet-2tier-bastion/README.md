@@ -95,5 +95,6 @@ Borra después `clave.pem`.
   git, igual que `clave.pem`; no los compartas.
 - Con `-var bastion_sku=Standard` se puede entrar desde la terminal con
   `az network bastion ssh` en lugar del portal; cuesta más por hora.
-- La subred de Bastion no lleva NSG propio: es opcional, y añadirlo exige un
-  conjunto fijo de reglas que Azure documenta.
+- La subred de Bastion lleva su propio NSG con las ocho reglas que Azure
+  exige para el servicio; desde Internet solo entra HTTPS (443).
+- Las VM no admiten extensiones: se configuran solo con cloud-init.

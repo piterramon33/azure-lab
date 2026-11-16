@@ -147,6 +147,8 @@ resource "azurerm_linux_virtual_machine_scale_set" "web" {
   instances           = var.instance_count
   tags                = local.tags
 
+  # checkov:skip=CKV_AZURE_97: El cifrado en el host exige registrar la característica EncryptionAtHost en la suscripción; sin ella el despliegue falla. Los discos ya se cifran en reposo por defecto.
+
   # Reparto estricto: mismo número de instancias en cada zona.
   zones        = var.zones
   zone_balance = true

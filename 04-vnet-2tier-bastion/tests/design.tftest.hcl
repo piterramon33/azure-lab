@@ -122,6 +122,33 @@ run "subred_de_bastion_correcta" {
   }
 }
 
+run "nsg_de_bastion_con_las_reglas_exigidas" {
+  command = plan
+
+  assert {
+    condition = toset([for r in azurerm_network_security_group.bastion.security_rule : r.name]) == toset([
+      "AllowHttpsInbound",
+      "AllowGatewayManagerInbound",
+      "AllowAzureLoadBalancerInbound",
+      "AllowBastionHostCommunication",
+      "AllowSshRdpOutbound",
+      "AllowAzureCloudOutbound",
+      "AllowBastionCommunication",
+      "AllowHttpOutbound",
+    ])
+    error_message = "El NSG de Bastion debe tener exactamente las ocho reglas que Azure exige."
+  }
+
+  assert {
+    condition = alltrue([
+      for r in azurerm_network_security_group.bastion.security_rule :
+      r.destination_port_range == "443"
+      if r.direction == "Inbound" && r.source_address_prefix == "Internet"
+    ])
+    error_message = "Desde Internet solo debe entrar HTTPS (443) a Bastion."
+  }
+}
+
 run "arranque_valido" {
   command = plan
 

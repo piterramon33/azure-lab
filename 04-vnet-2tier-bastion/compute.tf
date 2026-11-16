@@ -24,6 +24,8 @@ resource "azurerm_network_interface" "web" {
   resource_group_name = azurerm_resource_group.this.name
   tags                = local.tags
 
+  # checkov:skip=CKV_AZURE_119: La VM web es el punto de entrada público de este laboratorio; en producción iría detrás de un balanceador.
+
   ip_configuration {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.web.id
@@ -40,6 +42,10 @@ resource "azurerm_linux_virtual_machine" "web" {
   admin_username        = var.admin_username
   network_interface_ids = [azurerm_network_interface.web.id]
   tags                  = local.tags
+
+  # Las VM se configuran solo con cloud-init; sin extensiones hay menos
+  # superficie de ataque.
+  allow_extension_operations = false
 
   custom_data = base64encode(templatefile("${path.module}/cloud-init-web.yaml", {
     db_ip   = local.db_ip
@@ -93,6 +99,8 @@ resource "azurerm_linux_virtual_machine" "db" {
   network_interface_ids = [azurerm_network_interface.db.id]
   custom_data           = base64encode(file("${path.module}/cloud-init-db.yaml"))
   tags                  = local.tags
+
+  allow_extension_operations = false
 
   admin_ssh_key {
     username   = var.admin_username

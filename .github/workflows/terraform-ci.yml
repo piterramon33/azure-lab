@@ -94,7 +94,7 @@ jobs:
       - name: Instalar checkov
         run: pipx install checkov==3.4.5
 
-      # Informativo por ahora: lista los hallazgos sin tumbar el pipeline.
-      # Quitar --soft-fail cuando se hayan revisado y resuelto o justificado.
+      # Cualquier hallazgo tumba el pipeline. Los que se aceptan por diseño
+      # llevan un comentario "checkov:skip" con su justificación en el código.
       - name: Analizar el código de Terraform
-        run: checkov --directory . --framework terraform --compact --soft-fail
+        run: checkov --directory . --framework terraform --compact
