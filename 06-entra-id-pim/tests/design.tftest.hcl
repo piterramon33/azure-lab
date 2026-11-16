@@ -39,8 +39,8 @@ run "github_entra_sin_secretos" {
   }
 
   assert {
-    condition     = azuread_application_federated_identity_credential.github_branch.subject == "repo:piterramon33/azure-lab:ref:refs/heads/main"
-    error_message = "La credencial solo debe valer para la rama main de este repositorio."
+    condition     = azuread_application_federated_identity_credential.github_branch.subject == "repo:piterramon33@342094701/azure-lab@1460551119:ref:refs/heads/main"
+    error_message = "La credencial solo debe valer para la rama main de este repositorio, identificado también por sus IDs."
   }
 
   assert {

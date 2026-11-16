@@ -26,6 +26,32 @@ variable "github_repository" {
   }
 }
 
+# GitHub incluye en la identidad que presenta los identificadores numéricos
+# del propietario y del repositorio, que no cambian aunque se renombren. Así,
+# si alguien reutiliza un nombre liberado, no hereda la confianza.
+# Se consultan con: gh api repos/<propietario>/<nombre> --jq '.owner.id, .id'
+variable "github_owner_id" {
+  description = "Identificador numérico del propietario del repositorio en GitHub."
+  type        = string
+  default     = "342094701"
+
+  validation {
+    condition     = can(regex("^[0-9]+$", var.github_owner_id))
+    error_message = "Debe ser un número."
+  }
+}
+
+variable "github_repository_id" {
+  description = "Identificador numérico del repositorio en GitHub."
+  type        = string
+  default     = "1460551119"
+
+  validation {
+    condition     = can(regex("^[0-9]+$", var.github_repository_id))
+    error_message = "Debe ser un número."
+  }
+}
+
 variable "github_branch" {
   description = "Rama del repositorio autorizada a iniciar sesión."
   type        = string

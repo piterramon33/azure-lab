@@ -8,6 +8,18 @@ locals {
     readers         = "Solo lectura: auditoría y consulta."
     deployers       = "Identidades de automatización (pipelines), no personas."
   }
+
+  github_owner = split("/", var.github_repository)[0]
+  github_repo  = split("/", var.github_repository)[1]
+
+  # Identidad exacta que GitHub presenta al pedir el token, con los
+  # identificadores numéricos del propietario y del repositorio.
+  github_subject = join(":", [
+    "repo",
+    "${local.github_owner}@${var.github_owner_id}/${local.github_repo}@${var.github_repository_id}",
+    "ref",
+    "refs/heads/${var.github_branch}",
+  ])
 }
 
 # ---------------------------------------------------------------------------
@@ -48,7 +60,7 @@ resource "azuread_application_federated_identity_credential" "github_branch" {
   description    = "GitHub Actions en la rama ${var.github_branch} de ${var.github_repository}"
   audiences      = ["api://AzureADTokenExchange"]
   issuer         = "https://token.actions.githubusercontent.com"
-  subject        = "repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"
+  subject        = local.github_subject
 }
 
 # La identidad del pipeline entra al modelo por su grupo, como cualquier otra.

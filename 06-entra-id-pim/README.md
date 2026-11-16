@@ -19,6 +19,25 @@ Este proyecto no necesita suscripción de Azure: trabaja sobre el directorio.
 No se crean usuarios ni contraseñas: no hay ninguna credencial en el estado
 de Terraform.
 
+## La identidad que acepta el directorio
+
+GitHub se presenta con un texto como este, y la credencial federada tiene que
+coincidir carácter a carácter:
+
+```text
+repo:<propietario>@<id-propietario>/<repositorio>@<id-repositorio>:ref:refs/heads/main
+```
+
+Los identificadores numéricos no cambian aunque se renombre la cuenta o el
+repositorio, así que nadie hereda la confianza reutilizando un nombre. Para
+otro repositorio se consultan con:
+
+```bash
+gh api repos/<propietario>/<repositorio> --jq '.owner.id, .id'
+```
+
+y se pasan en las variables `github_owner_id` y `github_repository_id`.
+
 ## PIM está desactivado por defecto
 
 PIM exige licencia Entra ID P2, y los grupos que pueden recibir roles exigen
