@@ -55,6 +55,8 @@ resource "azuread_service_principal" "github" {
 # duración que firma él mismo. Solo vale para esta rama de este repositorio,
 # y no hay nada que guardar, rotar ni filtrar.
 resource "azuread_application_federated_identity_credential" "github_branch" {
+  # checkov:skip=CKV_AZURE_249: El analizador aún no reconoce el formato propietario@id/repositorio@id que GitHub emite. El sujeto apunta a un único repositorio y rama, sin comodines, y lo verifica la prueba github_entra_sin_secretos.
+
   application_id = azuread_application.github.id
   display_name   = "github-${var.github_branch}"
   description    = "GitHub Actions en la rama ${var.github_branch} de ${var.github_repository}"

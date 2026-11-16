@@ -79,3 +79,4 @@ por diseño llevan un comentario `checkov:skip` con el motivo, junto al recurso:
 | `CKV_AZURE_97` | Conjunto de escalado del proyecto 1 | El cifrado en el host exige registrar una característica en la suscripción |
 | `CKV_AZURE_119` | Interfaz de red de la VM web del proyecto 4 | La VM web es el punto de entrada público del laboratorio |
 | `CKV_AZURE_160` | NSG de la capa web del proyecto 4 | El laboratorio publica HTTP sin certificado |
+| `CKV_AZURE_249` | Credencial federada del proyecto 6 | El analizador no reconoce el formato con identificadores que GitHub emite; el sujeto exacto lo verifica una prueba |
