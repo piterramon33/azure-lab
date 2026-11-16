@@ -1,0 +1,17 @@
+# Estado de Terraform: contiene secretos (por ejemplo, la clave SSH generada)
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+crash.*.log
+
+# Valores propios de cada quien (IDs de suscripción, etc.)
+*.tfvars
+*.tfvars.json
+!example.tfvars
+
+# Planes guardados
+*.tfplan
+
+# Claves privadas exportadas para entrar por Bastion
+*.pem

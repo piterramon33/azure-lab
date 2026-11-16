@@ -1,0 +1,44 @@
+#cloud-config
+# La capa de datos no tiene salida a Internet, así que no se puede instalar
+# una base de datos real. Este servicio escucha en el puerto de PostgreSQL
+# (5432) y hace de sustituto para comprobar las reglas de red.
+write_files:
+  - path: /opt/dbstub/app.py
+    permissions: "0644"
+    content: |
+      import socket
+      import socketserver
+
+
+      class Handler(socketserver.BaseRequestHandler):
+          def handle(self):
+              self.request.sendall(("capa de datos OK desde " + socket.gethostname() + "\n").encode())
+
+
+      class Server(socketserver.ThreadingTCPServer):
+          allow_reuse_address = True
+          daemon_threads = True
+
+
+      Server(("0.0.0.0", 5432), Handler).serve_forever()
+
+  - path: /etc/systemd/system/dbstub.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=Sustituto de base de datos para probar la red
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      ExecStart=/usr/bin/python3 /opt/dbstub/app.py
+      DynamicUser=yes
+      Restart=always
+      RestartSec=2
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - systemctl daemon-reload
+  - systemctl enable --now dbstub.service

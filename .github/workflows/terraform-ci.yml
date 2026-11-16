@@ -1,0 +1,100 @@
+name: Terraform CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TERRAFORM_VERSION: "1.17.1"
+
+jobs:
+  fmt:
+    name: Formato
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Comprobar formato
+        run: terraform fmt -check -recursive -diff
+
+  discover:
+    name: Buscar proyectos
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      projects: ${{ steps.list.outputs.projects }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Un proyecto es cualquier carpeta de primer nivel con un providers.tf,
+      # así que los proyectos nuevos entran al pipeline sin tocar este archivo.
+      - name: Listar carpetas con Terraform
+        id: list
+        run: |
+          projects=$(find . -mindepth 2 -maxdepth 2 -name providers.tf -printf '%h\n' \
+            | sed 's|^\./||' | sort | jq -R . | jq -cs .)
+          echo "Proyectos: $projects"
+          echo "projects=$projects" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Validar y probar (${{ matrix.project }})
+    needs: discover
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.discover.outputs.projects) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      # Sin backend ni credenciales: solo descarga los proveedores.
+      - name: Inicializar
+        run: terraform init -backend=false
+
+      - name: Validar
+        run: terraform validate
+
+      # Las pruebas usan un proveedor de Azure simulado, no una suscripción.
+      - name: Pruebas de diseño
+        run: terraform test
+
+  security:
+    name: Análisis de seguridad
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Instalar checkov
+        run: pipx install checkov==3.4.5
+
+      # Informativo por ahora: lista los hallazgos sin tumbar el pipeline.
+      # Quitar --soft-fail cuando se hayan revisado y resuelto o justificado.
+      - name: Analizar el código de Terraform
+        run: checkov --directory . --framework terraform --compact --soft-fail
