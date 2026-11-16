@@ -98,3 +98,30 @@ jobs:
       # llevan un comentario "checkov:skip" con su justificación en el código.
       - name: Analizar el código de Terraform
         run: checkov --directory . --framework terraform --compact
+
+  # Comprueba que el pipeline puede entrar al directorio de Entra ID sin
+  # ningún secreto: GitHub emite un token de identidad de corta duración y el
+  # directorio lo acepta por la credencial federada del proyecto 6.
+  # Solo corre en main, porque esa credencial no vale para otras ramas ni
+  # para pull requests.
+  oidc-login:
+    name: Inicio de sesión sin secretos
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.AZURE_CLIENT_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Iniciar sesión con la identidad federada
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Comprobar la sesión
+        run: |
+          tipo=$(az account show --query user.type -o tsv)
+          echo "Tipo de identidad: $tipo"
+          test "$tipo" = "servicePrincipal"
